@@ -7,12 +7,12 @@
 
 #include <stdio.h>			// Required for: printf()
 #include <stdlib.h>			// Required for: EXIT_SUCCESS
-#include <string.h>			// Required for: memset()
 #include <math.h>			// Required for: sinf(), cosf()
 
 // Include SDL libraries
 #include "SDL/include/SDL.h"				// Required for SDL base systems functionality
-//#include "SDL_image/include/SDL_image.h"	// Required for image loading functionality
+#include "SDL_image/include/SDL_image.h"	// Required for image loading functionality
+#include "SDL_mixer/include/SDL_mixer.h"	// Required for audio loading and playing functionality
 
 // Define libraries required by linker
 // WARNING: Not all compilers support this option and it couples 
@@ -21,6 +21,7 @@
 //#pragma comment(lib, "SDL/lib/x86/SDL2.lib")
 //#pragma comment(lib, "SDL/lib/x86/SDL2main.lib")
 //#pragma comment(lib, "SDL_image/lib/x86/SDL2_image.lib")
+//#pragma comment( lib, "SDL_mixer/libx86/SDL2_mixer.lib" )
 
 // -------------------------------------------------------------------------
 // Defines, Types and Globals
@@ -32,9 +33,10 @@
 #define MAX_MOUSE_BUTTONS	   5
 #define JOYSTICK_DEAD_ZONE  8000
 
-#define SHIP_SPEED			   3
+#define SHIP_SPEED			   8
 #define MAX_SHIP_SHOTS		  32
-#define SHOT_SPEED			   5
+#define SHOT_SPEED			  12
+#define SCROLL_SPEED		   5
 
 enum WindowEvent
 {
@@ -76,11 +78,22 @@ struct GlobalState
 	int gamepad_axis_y_dir;
 	bool window_events[WE_COUNT];
 
+	// Texture variables
+	SDL_Texture* background;
+	SDL_Texture* ship;
+	SDL_Texture* shot;
+	int background_width;
+
+	// Audio variables
+	Mix_Music* music;
+	Mix_Chunk* fx_shoot;
+
 	// Game elements
 	int ship_x;
 	int ship_y;
 	Projectile shots[MAX_SHIP_SHOTS];
 	int last_shot;
+	int scroll;
 };
 
 // Global game state variable
@@ -111,24 +124,60 @@ void Start()
 	state.renderer = SDL_CreateRenderer(state.window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 	SDL_SetRenderDrawColor(state.renderer, 100, 149, 237, 255);		// Default clear color: Cornflower blue
 
-	// L2: TODO 1: Init input variables (keyboard, mouse_buttons)
+	// L2: DONE 1: Init input variables (keyboard, mouse_buttons)
+	state.keyboard = (KeyState*)calloc(sizeof(KeyState) * MAX_KEYBOARD_KEYS, 1);
+	for (int i = 0; i < MAX_MOUSE_BUTTONS; i++) state.mouse_buttons[i] = KEY_IDLE;
 
-
-	// L2: TODO 2: Init input gamepad 
+	// L2: DONE 2: Init input gamepad 
 	// Check SDL_NumJoysticks() and SDL_JoystickOpen()
+	if (SDL_NumJoysticks() < 1) printf("WARNING: No joysticks connected!\n");
+	else
+	{
+		state.gamepad = SDL_JoystickOpen(0);
+		if (state.gamepad == NULL) printf("WARNING: Unable to open game controller! SDL Error: %s\n", SDL_GetError());
+	}
 
+	// Init image system and load textures
+	IMG_Init(IMG_INIT_PNG);
+	state.background = SDL_CreateTextureFromSurface(state.renderer, IMG_Load("Assets/background.png"));
+	state.ship = SDL_CreateTextureFromSurface(state.renderer, IMG_Load("Assets/ship.png"));
+	state.shot = SDL_CreateTextureFromSurface(state.renderer, IMG_Load("Assets/shot.png"));
+	SDL_QueryTexture(state.background, NULL, NULL, &state.background_width, NULL);
+
+	// L4: TODO 1: Init audio system and load music/fx
+	// EXTRA: Handle the case the sound can not be loaded!
+	int Mix_Init(MIX_INIT_OGG); //inicialitzar musica
+	Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 1024); //obrir audio
+	state.music = Mix_LoadMUS("Assets/music.ogg"); //carregar la musica, a la variable
+	state.fx_shoot = Mix_LoadWAV("Assets/laser.wav"); //carregar l'audio, a la variable
+
+	// L4: TODO 2: Start playing loaded music
+	Mix_PlayMusic(state.music, -1); //utilitzar la musica, de la variable state.music
 
 	// Init game variables
 	state.ship_x = 100;
 	state.ship_y = SCREEN_HEIGHT / 2;
 	state.last_shot = 0;
+	state.scroll = 0;
 }
 
 // ----------------------------------------------------------------
 void Finish()
 {
-	// L2: TODO 3: Close game controller
+	// L4: TODO 3: Unload music/fx and deinitialize audio system
+	Mix_FreeMusic(state.music); //tancar la musica, la variable
+	Mix_FreeChunk(state.fx_shoot); //tancar els sons, variable
+	Mix_CloseAudio(); //tancar audio general
+	Mix_Quit(); //tancar la llibreria
 
+	// Unload textures and deinitialize image system
+	SDL_DestroyTexture(state.background);
+	SDL_DestroyTexture(state.ship);
+	IMG_Quit();
+
+	// L2: DONE 3: Close game controller
+	SDL_JoystickClose(state.gamepad);
+	state.gamepad = NULL;
 
 	// Deinitialize input events system
 	//SDL_QuitSubSystem(SDL_INIT_EVENTS);
@@ -142,20 +191,20 @@ void Finish()
 	SDL_Quit();
 
 	// Free any game allocated memory
-	free(state.keyboard);
+	free(state.keyboard); //free el malloc
 }
 
 // ----------------------------------------------------------------
 bool CheckInput()
 {
 	// Update current mouse buttons state 
-	// considering previous mouse buttons state
+    // considering previous mouse buttons state
 	for (int i = 0; i < MAX_MOUSE_BUTTONS; ++i)
 	{
 		if (state.mouse_buttons[i] == KEY_DOWN) state.mouse_buttons[i] = KEY_REPEAT;
 		if (state.mouse_buttons[i] == KEY_UP) state.mouse_buttons[i] = KEY_IDLE;
 	}
-
+    
 	// Gather the state of all input devices
 	// WARNING: It modifies global keyboard and mouse state but 
 	// its precision may be not enough
@@ -189,9 +238,9 @@ bool CheckInput()
 					default: break;
 				}
 			} break;
-			// L2: TODO 4: Check mouse events for button state
-			case SDL_MOUSEBUTTONDOWN: /*...*/ break;
-			case SDL_MOUSEBUTTONUP:	/*...*/ break;
+			// L2: DONE 4: Check mouse events for button state
+			case SDL_MOUSEBUTTONDOWN: state.mouse_buttons[event.button.button - 1] = KEY_DOWN; break;
+			case SDL_MOUSEBUTTONUP:	state.mouse_buttons[event.button.button - 1] = KEY_UP; break;
 			case SDL_MOUSEMOTION:
 			{
 				state.mouse_x = event.motion.x;
@@ -224,16 +273,25 @@ bool CheckInput()
 
 	const Uint8* keys = SDL_GetKeyboardState(NULL);
 
-	// L2: TODO 5: Update keyboard keys state
-	// Consider previous keys states for KEY_DOWN and KEY_UP
+	// L2: DONE 5: Update keyboard keys state
+    // Consider previous keys states for KEY_DOWN and KEY_UP
 	for (int i = 0; i < MAX_KEYBOARD_KEYS; ++i)
 	{
-		// A value of 1 means that the key is pressed
-		// and a value of 0 means that it is not
+		// A value of 1 means that the key is pressed and a value of 0 means that it is not
+		if (keys[i] == 1)
+		{
+			if (state.keyboard[i] == KEY_IDLE) state.keyboard[i] = KEY_DOWN;
+			else state.keyboard[i] = KEY_REPEAT;
+		}
+		else
+		{
+			if (state.keyboard[i] == KEY_REPEAT || state.keyboard[i] == KEY_DOWN) state.keyboard[i] = KEY_UP;
+			else state.keyboard[i] = KEY_IDLE;
+		}
 	}
 
-	// L2: TODO 6: Check ESCAPE key pressed to finish the game
-
+	// L2: DONE 6: Check ESCAPE key pressed to finish the game
+	if (state.keyboard[SDL_SCANCODE_ESCAPE] == KEY_DOWN) return false;
 
 	// Check QUIT window event to finish the game
 	if (state.window_events[WE_QUIT] == true) return false;
@@ -244,11 +302,26 @@ bool CheckInput()
 // ----------------------------------------------------------------
 void MoveStuff()
 {
-	// L2: TODO 7: Move the ship with arrow keys
+	// L2: DONE 7: Move the ship with arrow keys
+	if (state.keyboard[SDL_SCANCODE_UP] == KEY_REPEAT) state.ship_y -= SHIP_SPEED;
+	else if (state.keyboard[SDL_SCANCODE_DOWN] == KEY_REPEAT) state.ship_y += SHIP_SPEED;
 
+	if (state.keyboard[SDL_SCANCODE_LEFT] == KEY_REPEAT) state.ship_x -= SHIP_SPEED;
+	else if (state.keyboard[SDL_SCANCODE_RIGHT] == KEY_REPEAT) state.ship_x += SHIP_SPEED;
 
-	// L2: TODO 8: Initialize a new shot when SPACE key is pressed
+	// L2: DONE 8: Initialize a new shot when SPACE key is pressed
+	if (state.keyboard[SDL_SCANCODE_SPACE] == KEY_DOWN)
+	{
+		if (state.last_shot == MAX_SHIP_SHOTS) state.last_shot = 0;
 
+		state.shots[state.last_shot].alive = true;
+		state.shots[state.last_shot].x = state.ship_x + 35;
+		state.shots[state.last_shot].y = state.ship_y - 3;
+		state.last_shot++;
+
+		// L4: TODO 4: Play sound fx_shoot
+		Mix_PlayChannel(-1, state.fx_shoot, 0); //reproduir so
+	}
 
 	// Update active shots
 	for (int i = 0; i < MAX_SHIP_SHOTS; ++i)
@@ -268,11 +341,35 @@ void Draw()
 	SDL_SetRenderDrawColor(state.renderer, 100, 149, 237, 255);
 	SDL_RenderClear(state.renderer);
 
+	// Draw background and scroll
+	state.scroll += SCROLL_SPEED;
+	if (state.scroll >= state.background_width)	state.scroll = 0;
+
+	// Draw background texture (two times for scrolling effect)
+	// NOTE: rec rectangle is being reused for next draws
+	SDL_Rect rec = { -state.scroll, 0, state.background_width, SCREEN_HEIGHT };
+	SDL_RenderCopy(state.renderer, state.background, NULL, &rec);
+	rec.x += state.background_width;
+	SDL_RenderCopy(state.renderer, state.background, NULL, &rec);
+
 	// Draw ship rectangle
-	DrawRectangle(state.ship_x, state.ship_y, 250, 100, { 255, 0, 0, 255 });
+	//DrawRectangle(state.ship_x, state.ship_y, 250, 100, { 255, 0, 0, 255 });
 
-	// L2: TODO 9: Draw active shots
+	// Draw ship texture
+	rec.x = state.ship_x; rec.y = state.ship_y; rec.w = 64; rec.h = 64;
+	SDL_RenderCopy(state.renderer, state.ship, NULL, &rec);
 
+	// L2: DONE 9: Draw active shots
+	rec.w = 64; rec.h = 64;
+	for (int i = 0; i < MAX_SHIP_SHOTS; ++i)
+	{
+		if (state.shots[i].alive)
+		{
+			//DrawRectangle(state.shots[i].x, state.shots[i].y, 50, 20, { 0, 250, 0, 255 });
+			rec.x = state.shots[i].x; rec.y = state.shots[i].y;
+			SDL_RenderCopy(state.renderer, state.shot, NULL, &rec);
+		}
+	}
 
 	// Finally present framebuffer
 	SDL_RenderPresent(state.renderer);
