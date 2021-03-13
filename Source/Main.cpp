@@ -8,6 +8,7 @@
 #include <stdio.h>			// Required for: printf()
 #include <stdlib.h>			// Required for: EXIT_SUCCESS
 #include <math.h>			// Required for: sinf(), cosf()
+#include <time.h>
 
 // Include SDL libraries
 #include "SDL/include/SDL.h"				// Required for SDL base systems functionality
@@ -34,9 +35,9 @@
 #define JOYSTICK_DEAD_ZONE  8000
 
 #define SHIP_SPEED			   8
-//#define MAX_SHIP_SHOTS		  32
-//#define SHOT_SPEED			  12
-#define SCROLL_SPEED		   5
+#define MAX_SHIP_SHOTS		  32
+#define SHOT_SPEED			   10
+#define SCROLL_SPEED		   10
 
 enum WindowEvent
 {
@@ -54,11 +55,11 @@ enum KeyState
 	KEY_UP				// RELEASED (DOWN->DEFAULT)
 };
 
-/*struct Projectile
+struct Projectile
 {
 	int x, y;
 	bool alive;
-};*/
+};
 
 // Global context to store our game state data
 struct GlobalState
@@ -81,7 +82,7 @@ struct GlobalState
 	// Texture variables
 	SDL_Texture* background;
 	SDL_Texture* ship;
-	SDL_Texture* box; //shot -> box
+	SDL_Texture* shot; //shot -> box
 	int background_height;
 
 	// Audio variables
@@ -91,9 +92,14 @@ struct GlobalState
 	// Game elements
 	int ship_x;
 	int ship_y;
-	//Projectile shots[MAX_SHIP_SHOTS];
-	//int last_shot;
+	Projectile shots[MAX_SHIP_SHOTS];
+	int last_shot;
 	int scroll;
+
+	int num = 0;
+	int randomx;
+	int randpmS;
+	int timeNum = 50;
 };
 
 // Global game state variable
@@ -140,9 +146,9 @@ void Start()
 	// Init image system and load textures
 	//INICIALITZACIÓ
 	IMG_Init(IMG_INIT_PNG);
-	state.background = SDL_CreateTextureFromSurface(state.renderer, IMG_Load("Assets/720x2 v3.png"));
-	state.ship = SDL_CreateTextureFromSurface(state.renderer, IMG_Load("Assets/amazon_trackv2.png"));
-	state.box = SDL_CreateTextureFromSurface(state.renderer, IMG_Load("Assets/shot.png"));
+	state.background = SDL_CreateTextureFromSurface(state.renderer, IMG_Load("Assets/fondofinal.png"));
+	state.ship = SDL_CreateTextureFromSurface(state.renderer, IMG_Load("Assets/amazon_trackv5.png"));
+	state.shot = SDL_CreateTextureFromSurface(state.renderer, IMG_Load("Assets/shot.png"));
 	SDL_QueryTexture(state.background, NULL, NULL, NULL, &state.background_height);//CANVI W H
 
 	// L4: TODO 1: Init audio system and load music/fx
@@ -156,8 +162,8 @@ void Start()
 	Mix_PlayMusic(state.music, -1); //utilitzar la musica, de la variable state.music
 
 	// Init game variables //POSICIONS INICIALS
-	state.ship_x = SCREEN_WIDTH / 2;
-	state.ship_y = 900;
+	state.ship_x = SCREEN_WIDTH / 2 - 128;
+	state.ship_y = 750; //posicio furgo
 	//state.last_shot = 0;
 	state.scroll = 0;
 }
@@ -307,8 +313,39 @@ void MoveStuff()
 	//if (state.keyboard[SDL_SCANCODE_UP] == KEY_REPEAT) state.ship_y -= SHIP_SPEED;
 	//else if (state.keyboard[SDL_SCANCODE_DOWN] == KEY_REPEAT) state.ship_y += SHIP_SPEED;
 
-	if (state.keyboard[SDL_SCANCODE_LEFT] == KEY_REPEAT) state.ship_x -= SHIP_SPEED;
-	else if (state.keyboard[SDL_SCANCODE_RIGHT] == KEY_REPEAT) state.ship_x += SHIP_SPEED;
+	if ((state.keyboard[SDL_SCANCODE_LEFT] == KEY_REPEAT)&&(state.ship_x > -5)) state.ship_x -= SHIP_SPEED; //Límits laterals
+	else if ((state.keyboard[SDL_SCANCODE_RIGHT] == KEY_REPEAT)&&(state.ship_x < 470)) state.ship_x += SHIP_SPEED;
+
+	if (state.num == 0)
+	{
+		state.randomx = (rand() % 500 + 0);
+		state.randpmS = (rand() % 51 + state.timeNum);
+
+		if (state.last_shot == MAX_SHIP_SHOTS) state.last_shot = 0;
+
+		state.shots[state.last_shot].alive = true;
+		state.shots[state.last_shot].x = state.randomx;
+		state.shots[state.last_shot].y = 0;
+		state.last_shot++;
+
+		state.num = state.randpmS;
+
+		if (state.timeNum > 20) state.timeNum--;
+	}
+
+	if (state.num > 0)
+	{
+		state.num--;
+	}
+	// Update active shots
+	for (int i = 0; i < MAX_SHIP_SHOTS; ++i)
+	{
+		if (state.shots[i].alive)
+		{
+			if (state.shots[i].y < SCREEN_HEIGHT) state.shots[i].y += SHOT_SPEED;
+			else { state.shots[i].alive = false; }
+		}
+	}
 
 	// L2: DONE 8: Initialize a new shot when SPACE key is pressed //UPDATE DISPARAR
 	/*if (state.keyboard[SDL_SCANCODE_SPACE] == KEY_DOWN)
@@ -357,11 +394,11 @@ void Draw()
 	//DrawRectangle(state.ship_x, state.ship_y, 250, 100, { 255, 0, 0, 255 });
 
 	// Draw ship texture
-	rec.x = state.ship_x; rec.y = state.ship_y; rec.w = 64; rec.h = 64;
+	rec.x = state.ship_x; rec.y = state.ship_y; rec.w = 256; rec.h = 256; //mides sprite
 	SDL_RenderCopy(state.renderer, state.ship, NULL, &rec);
 
 	// L2: DONE 9: Draw active shots
-	/*rec.w = 64; rec.h = 64;
+	rec.w = 64; rec.h = 64;
 	for (int i = 0; i < MAX_SHIP_SHOTS; ++i)
 	{
 		if (state.shots[i].alive)
@@ -370,7 +407,7 @@ void Draw()
 			rec.x = state.shots[i].x; rec.y = state.shots[i].y;
 			SDL_RenderCopy(state.renderer, state.shot, NULL, &rec);
 		}
-	}*/
+	}
 
 	// Finally present framebuffer
 	SDL_RenderPresent(state.renderer);
@@ -381,6 +418,7 @@ void Draw()
 // -------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
+	srand(time(NULL));
 	Start();
 
 	while (CheckInput())
