@@ -140,8 +140,8 @@ void Start()
 	// Init image system and load textures
 	//INICIALITZACIÓ
 	IMG_Init(IMG_INIT_PNG);
-	state.background = SDL_CreateTextureFromSurface(state.renderer, IMG_Load("Assets/backgroundroad.png"));
-	state.ship = SDL_CreateTextureFromSurface(state.renderer, IMG_Load("Assets/ship.png"));
+	state.background = SDL_CreateTextureFromSurface(state.renderer, IMG_Load("Assets/720x2 v3.png"));
+	state.ship = SDL_CreateTextureFromSurface(state.renderer, IMG_Load("Assets/amazon_trackv2.png"));
 	state.box = SDL_CreateTextureFromSurface(state.renderer, IMG_Load("Assets/shot.png"));
 	SDL_QueryTexture(state.background, NULL, NULL, NULL, &state.background_height);//CANVI W H
 
