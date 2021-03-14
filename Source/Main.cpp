@@ -148,7 +148,7 @@ void Start()
 	IMG_Init(IMG_INIT_PNG);
 	state.background = SDL_CreateTextureFromSurface(state.renderer, IMG_Load("Assets/fondofinal.png"));
 	state.ship = SDL_CreateTextureFromSurface(state.renderer, IMG_Load("Assets/amazon_trackv5.png"));
-	state.shot = SDL_CreateTextureFromSurface(state.renderer, IMG_Load("Assets/shot.png"));
+	state.shot = SDL_CreateTextureFromSurface(state.renderer, IMG_Load("Assets/Sprite_Agujero.png"));
 	SDL_QueryTexture(state.background, NULL, NULL, NULL, &state.background_height);//CANVI W H
 
 	// L4: TODO 1: Init audio system and load music/fx
