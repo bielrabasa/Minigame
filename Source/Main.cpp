@@ -34,8 +34,8 @@
 #define MAX_MOUSE_BUTTONS	   5
 #define JOYSTICK_DEAD_ZONE  8000
 
-#define SHIP_SPEED			   8
-#define MAX_SHIP_SHOTS		  32
+#define SHIP_SPEED			   10
+#define MAX_SHIP_SHOTS		   32
 #define SHOT_SPEED			   10
 #define SCROLL_SPEED		   10
 
@@ -99,7 +99,7 @@ struct GlobalState
 	int num = 0;
 	int randomx;
 	int randpmS;
-	int timeNum = 50;
+	int timeNum = 50; //mes menys v de aparició
 };
 
 // Global game state variable
@@ -148,7 +148,7 @@ void Start()
 	IMG_Init(IMG_INIT_PNG);
 	state.background = SDL_CreateTextureFromSurface(state.renderer, IMG_Load("Assets/fondofinal.png"));
 	state.ship = SDL_CreateTextureFromSurface(state.renderer, IMG_Load("Assets/amazon_trackv5.png"));
-	state.shot = SDL_CreateTextureFromSurface(state.renderer, IMG_Load("Assets/Sprite_Agujero.png"));
+	state.shot = SDL_CreateTextureFromSurface(state.renderer, IMG_Load("Assets/Sprite_Agujerov2.png"));
 	SDL_QueryTexture(state.background, NULL, NULL, NULL, &state.background_height);//CANVI W H
 
 	// L4: TODO 1: Init audio system and load music/fx
@@ -309,16 +309,13 @@ bool CheckInput()
 // ----------------------------------------------------------------
 void MoveStuff()
 {
-	// L2: DONE 7: Move the ship with arrow keys
-	//if (state.keyboard[SDL_SCANCODE_UP] == KEY_REPEAT) state.ship_y -= SHIP_SPEED;
-	//else if (state.keyboard[SDL_SCANCODE_DOWN] == KEY_REPEAT) state.ship_y += SHIP_SPEED;
-
+	
 	if ((state.keyboard[SDL_SCANCODE_LEFT] == KEY_REPEAT)&&(state.ship_x > -5)) state.ship_x -= SHIP_SPEED; //Límits laterals
 	else if ((state.keyboard[SDL_SCANCODE_RIGHT] == KEY_REPEAT)&&(state.ship_x < 470)) state.ship_x += SHIP_SPEED;
 
 	if (state.num == 0)
 	{
-		state.randomx = (rand() % 500 + 0);
+		state.randomx = (rand() % 525 + 65);//65 minima 590 maxima, 590-65 = 525
 		state.randpmS = (rand() % 51 + state.timeNum);
 
 		if (state.last_shot == MAX_SHIP_SHOTS) state.last_shot = 0;
@@ -346,30 +343,15 @@ void MoveStuff()
 			else { state.shots[i].alive = false; }
 		}
 	}
-
-	// L2: DONE 8: Initialize a new shot when SPACE key is pressed //UPDATE DISPARAR
-	/*if (state.keyboard[SDL_SCANCODE_SPACE] == KEY_DOWN)
-	{
-		if (state.last_shot == MAX_SHIP_SHOTS) state.last_shot = 0;
-
-		state.shots[state.last_shot].alive = true;
-		state.shots[state.last_shot].x = state.ship_x + 35;
-		state.shots[state.last_shot].y = state.ship_y - 3;
-		state.last_shot++;
-
-		// L4: TODO 4: Play sound fx_shoot
-		Mix_PlayChannel(-1, state.fx_shoot, 0); //reproduir so
-	}
-
-	// Update active shots
-	for (int i = 0; i < MAX_SHIP_SHOTS; ++i)
-	{
-		if (state.shots[i].alive)
-		{
-			if (state.shots[i].x < SCREEN_WIDTH) state.shots[i].x += SHOT_SPEED;
-			else state.shots[i].alive = false;
+	
+	//colisions
+	for (int i = 0; i < MAX_SHIP_SHOTS; ++i) {
+		if (((state.shots[i].x > state.ship_x + 20) && (state.shots[i].x < state.ship_x + 160)) && ((state.shots[i].y > state.ship_y -15) && (state.shots[i].y < state.ship_y + 180))) {
+			//PERFECTES = 20 160 -15 180
+			SDL_Delay(2000);
+			state.window_events[WE_QUIT] = true;
 		}
-	}*/
+	}
 }
 
 // ----------------------------------------------------------------
@@ -393,10 +375,6 @@ void Draw()
 	// Draw ship rectangle
 	//DrawRectangle(state.ship_x, state.ship_y, 250, 100, { 255, 0, 0, 255 });
 
-	// Draw ship texture
-	rec.x = state.ship_x; rec.y = state.ship_y; rec.w = 256; rec.h = 256; //mides sprite
-	SDL_RenderCopy(state.renderer, state.ship, NULL, &rec);
-
 	// L2: DONE 9: Draw active shots
 	rec.w = 64; rec.h = 64;
 	for (int i = 0; i < MAX_SHIP_SHOTS; ++i)
@@ -408,6 +386,10 @@ void Draw()
 			SDL_RenderCopy(state.renderer, state.shot, NULL, &rec);
 		}
 	}
+
+	// Draw ship texture
+	rec.x = state.ship_x; rec.y = state.ship_y; rec.w = 256; rec.h = 256; //mides sprite
+	SDL_RenderCopy(state.renderer, state.ship, NULL, &rec);
 
 	// Finally present framebuffer
 	SDL_RenderPresent(state.renderer);
