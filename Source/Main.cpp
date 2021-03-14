@@ -325,7 +325,7 @@ void MoveStuff()
 
 		state.shots[state.last_shot].alive = true;
 		state.shots[state.last_shot].x = state.randomx;
-		state.shots[state.last_shot].y = 0;
+		state.shots[state.last_shot].y = -20;
 		state.last_shot++;
 
 		state.num = state.randpmS;
