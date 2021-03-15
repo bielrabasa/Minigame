@@ -409,7 +409,7 @@ void MoveStuff()
 
 		//Test paquetes + puntuaciones
 
-		if (state.num2 == 0)
+		/*if (state.num2 == 0)
 		{
 			state.randoma = (rand() % 525 + 65);//65 minima 590 maxima, 590-65 = 525
 			state.randome = (rand() % 51 + state.timeNum2);
@@ -447,7 +447,7 @@ void MoveStuff()
 				//SDL_Delay(500);
 				state.cont++;
 			}
-		}
+		}*/
 
 	} break;
 	case ENDING:
@@ -508,7 +508,7 @@ void Draw()
 
 		//Draw box
 
-		rec.w = 64; rec.h = 64;
+		/*rec.w = 64; rec.h = 64;
 		for (int i = 0; i < MAX_SHIP_SHOTS; ++i)
 		{
 			if (state.box[i].alive)
@@ -517,19 +517,19 @@ void Draw()
 				rec.x = state.box[i].x; rec.y = state.box[i].y;
 				SDL_RenderCopy(state.renderer, state.pacage, NULL, &rec);
 			}
-
-			// Draw ship texture
-			rec.x = state.ship_x; rec.y = state.ship_y; rec.w = 256; rec.h = 256; //mides sprite
-			SDL_RenderCopy(state.renderer, state.ship, NULL, &rec);
-
-			//Puntuacion
-			if (state.box[i].alive) {
-				if (state.cont == 1) {
-					rec.w = 64; rec.h = 64;
-					SDL_RenderCopy(state.renderer, state.num0, NULL, &rec);
-				}
-			}
 		}
+		// Draw ship texture
+		rec.x = state.ship_x; rec.y = state.ship_y; rec.w = 256; rec.h = 256; //mides sprite
+		SDL_RenderCopy(state.renderer, state.ship, NULL, &rec);
+
+		//Puntuacion
+		/*
+		if(state.box[i].alive){
+			if (state.cont == 1) {
+				rec.w = 64; rec.h = 64;
+				SDL_RenderCopy(state.renderer, state.num0, NULL, &rec);
+			}
+		}*/
 		// Clear screen to Cornflower blue
 	} break;
 	case ENDING:
