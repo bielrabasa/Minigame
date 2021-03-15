@@ -36,8 +36,8 @@
 
 #define SHIP_SPEED			   10
 #define MAX_SHIP_SHOTS		   32
-#define SHOT_SPEED			   10
-#define SCROLL_SPEED		   10
+#define SHOT_SPEED			   8
+#define SCROLL_SPEED		   8
 
 enum WindowEvent
 {
