@@ -517,7 +517,7 @@ void Draw()
 				rec.x = state.box[i].x; rec.y = state.box[i].y;
 				SDL_RenderCopy(state.renderer, state.pacage, NULL, &rec);
 			}
-		}
+		}*/
 		// Draw ship texture
 		rec.x = state.ship_x; rec.y = state.ship_y; rec.w = 256; rec.h = 256; //mides sprite
 		SDL_RenderCopy(state.renderer, state.ship, NULL, &rec);
