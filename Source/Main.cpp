@@ -93,7 +93,9 @@ struct GlobalState
 	SDL_Texture* title;
 	SDL_Texture* ending;
 	SDL_Texture* ship;
-	SDL_Texture* shot; //shot -> box
+	SDL_Texture* shot;//shot -> box
+	SDL_Texture* pacage;
+	SDL_Texture* num0;
 	int background_height;
 
 	// Audio variables
@@ -105,13 +107,20 @@ struct GlobalState
 	int ship_y;
 	Projectile shots[MAX_SHIP_SHOTS];
 	int last_shot;
+	Projectile box[MAX_SHIP_SHOTS];
+	int last_box;
 	int scroll;
 
 	GameScreen currentScreen;
 
+	int cont = 0;//Contador
 	int num = 0;
+	int num2 = 0;
 	int randomx;
 	int randpmS;
+	int randoma;
+	int randome;
+	int timeNum2 = 50;//V respawn caixes
 	int timeNum = 50; //mes menys v de aparició
 };
 
@@ -165,7 +174,16 @@ void Start()
 	state.ending = SDL_CreateTextureFromSurface(state.renderer, IMG_Load("Assets/Pantalla_Muerte.png")); //pantallafinal
 	state.ship = SDL_CreateTextureFromSurface(state.renderer, IMG_Load("Assets/amazon_trackv5.png"));//furgo
 	state.shot = SDL_CreateTextureFromSurface(state.renderer, IMG_Load("Assets/Sprite_Agujerov2.png"));//escotilla
+	state.pacage = SDL_CreateTextureFromSurface(state.renderer, IMG_Load("Assets/Sprite_Caixa2.png"));//Caja
+	{
+		state.num0 = SDL_CreateTextureFromSurface(state.renderer, IMG_Load("Assets/num0.png"));//Caja
 
+
+
+
+
+
+	}
 	SDL_QueryTexture(state.background, NULL, NULL, NULL, &state.background_height);//CANVI W H
 
 	// L4: TODO 1: Init audio system and load music/fx
@@ -202,6 +220,7 @@ void Finish()
 	SDL_DestroyTexture(state.logo);
 	SDL_DestroyTexture(state.title);
 	SDL_DestroyTexture(state.ending);
+	SDL_DestroyTexture(state.pacage);
 	IMG_Quit();
 
 	// L2: DONE 3: Close game controller
@@ -386,6 +405,50 @@ void MoveStuff()
 				state.currentScreen = ENDING;
 			}
 		}
+
+
+		//Test paquetes + puntuaciones
+
+		if (state.num2 == 0)
+		{
+			state.randoma = (rand() % 525 + 65);//65 minima 590 maxima, 590-65 = 525
+			state.randome = (rand() % 51 + state.timeNum2);
+
+			if (state.last_box == MAX_SHIP_SHOTS) state.last_box = 0;
+
+			state.box[state.last_box].alive = true;
+			state.box[state.last_box].x = state.randomx;
+			state.box[state.last_box].y = -20;
+			state.last_box++;
+
+			state.num2 = state.randome;
+
+			if (state.timeNum2 > 20) state.timeNum2--;
+		}
+
+		if (state.num2 > 0)
+		{
+			state.num2--;
+		}
+		// Update active shots
+		for (int i = 0; i < MAX_SHIP_SHOTS; ++i)
+		{
+			if (state.box[i].alive)
+			{
+				if (state.box[i].y < SCREEN_HEIGHT) state.box[i].y += SHOT_SPEED;
+				else { state.box[i].alive = false; }
+			}
+		}
+
+		//colisions
+		for (int i = 0; i < MAX_SHIP_SHOTS; ++i) {
+			if (((state.box[i].x > state.ship_x + 20) && (state.box[i].x < state.ship_x + 160)) && ((state.box[i].y > state.ship_y - 15) && (state.box[i].y < state.ship_y + 180))) {
+				//PERFECTES = 20 160 -15 180
+				//SDL_Delay(500);
+				state.cont++;
+			}
+		}
+
 	} break;
 	case ENDING:
 	{
@@ -443,16 +506,38 @@ void Draw()
 			}
 		}
 
-		// Draw ship texture
-		rec.x = state.ship_x; rec.y = state.ship_y; rec.w = 256; rec.h = 256; //mides sprite
-		SDL_RenderCopy(state.renderer, state.ship, NULL, &rec);
+		//Draw box
 
+		rec.w = 64; rec.h = 64;
+		for (int i = 0; i < MAX_SHIP_SHOTS; ++i)
+		{
+			if (state.box[i].alive)
+			{
+				//DrawRectangle(state.shots[i].x, state.shots[i].y, 50, 20, { 0, 250, 0, 255 });
+				rec.x = state.box[i].x; rec.y = state.box[i].y;
+				SDL_RenderCopy(state.renderer, state.pacage, NULL, &rec);
+			}
+
+			// Draw ship texture
+			rec.x = state.ship_x; rec.y = state.ship_y; rec.w = 256; rec.h = 256; //mides sprite
+			SDL_RenderCopy(state.renderer, state.ship, NULL, &rec);
+
+			//Puntuacion
+			if (state.box[i].alive) {
+				if (state.cont == 1) {
+					rec.w = 64; rec.h = 64;
+					SDL_RenderCopy(state.renderer, state.num0, NULL, &rec);
+				}
+			}
+		}
 		// Clear screen to Cornflower blue
 	} break;
 	case ENDING:
 	{
 		SDL_Rect rec = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
 		SDL_RenderCopy(state.renderer, state.ending, NULL, &rec);
+		state.cont = 0;
+
 	} break;
 	default: break;
 	}
