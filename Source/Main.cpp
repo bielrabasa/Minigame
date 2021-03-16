@@ -122,6 +122,9 @@ struct GlobalState
 	int randome;
 	int timeNum2 = 50;//V respawn caixes
 	int timeNum = 50; //mes menys v de aparició
+
+	float speedshot = SHOT_SPEED;
+	float speedShip = SCROLL_SPEED;
 };
 
 // Global game state variable
@@ -383,6 +386,9 @@ void MoveStuff()
 			if (state.timeNum > 20) state.timeNum--;
 
 			Mix_PlayChannel(-1, state.fx_shoot, 0);
+
+			state.speedShip += 0.15;
+			state.speedshot += 0.15;
 		}
 
 		if (state.num > 0)
@@ -394,7 +400,7 @@ void MoveStuff()
 		{
 			if (state.shots[i].alive)
 			{
-				if (state.shots[i].y < SCREEN_HEIGHT) state.shots[i].y += SHOT_SPEED;
+				if (state.shots[i].y < SCREEN_HEIGHT) state.shots[i].y += state.speedshot;
 				else { state.shots[i].alive = false; }
 			}
 		}
@@ -483,7 +489,7 @@ void Draw()
 	case GAMEPLAY:
 	{
 		// Draw background and scroll
-		state.scroll += SCROLL_SPEED;
+		state.scroll += state.speedShip;
 		if (state.scroll >= 0)	state.scroll = -SCREEN_HEIGHT; //SÓC MOLT FELIÇ
 
 		// Draw background texture (two times for scrolling effect)
