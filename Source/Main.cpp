@@ -190,7 +190,7 @@ void Start()
 	// EXTRA: Handle the case the sound can not be loaded!
 	Mix_Init(MIX_INIT_OGG); //inicialitzar musica
 	Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 1024); //obrir audio
-	state.music = Mix_LoadMUS("Assets/music.ogg"); //carregar la musica, a la variable //MUSICA
+	state.music = Mix_LoadMUS("Assets/music3.ogg"); //carregar la musica, a la variable //MUSICA
 	state.fx_shoot = Mix_LoadWAV("Assets/salchichon.wav"); //carregar l'audio, a la variable
 
 	// L4: TODO 2: Start playing loaded music
