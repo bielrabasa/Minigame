@@ -22,3 +22,5 @@ A short minigame about a van driving to deliver packages.
  - Roger Salas
  - Pau Olmos
  - Adrián Martín
+## License
+MIT License
