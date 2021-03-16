@@ -385,7 +385,7 @@ void MoveStuff()
 
 			if (state.timeNum > 20) state.timeNum--;
 
-			Mix_PlayChannel(-1, state.fx_shoot, 0);
+			//Mix_PlayChannel(-1, state.fx_shoot, 0);
 
 			state.speedShip += 0.15;
 			state.speedshot += 0.15;
@@ -410,6 +410,7 @@ void MoveStuff()
 			if (((state.shots[i].x > state.ship_x + 20) && (state.shots[i].x < state.ship_x + 160)) && ((state.shots[i].y > state.ship_y - 15) && (state.shots[i].y < state.ship_y + 180))) {
 				//PERFECTES = 20 160 -15 180
 				SDL_Delay(500);
+				Mix_PlayChannel(-1, state.fx_shoot, 0);
 				state.currentScreen = ENDING;
 			}
 		}
