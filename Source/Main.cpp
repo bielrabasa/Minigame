@@ -188,9 +188,9 @@ void Start()
 
 	// L4: TODO 1: Init audio system and load music/fx
 	// EXTRA: Handle the case the sound can not be loaded!
-	int Mix_Init(MIX_INIT_OGG); //inicialitzar musica
+	Mix_Init(MIX_INIT_OGG); //inicialitzar musica
 	Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 1024); //obrir audio
-	state.music = Mix_LoadMUS("Assets/halo.ogg"); //carregar la musica, a la variable //MUSICA
+	state.music = Mix_LoadMUS("Assets/music.ogg"); //carregar la musica, a la variable //MUSICA
 	state.fx_shoot = Mix_LoadWAV("Assets/salchichon.wav"); //carregar l'audio, a la variable
 
 	// L4: TODO 2: Start playing loaded music
@@ -381,6 +381,8 @@ void MoveStuff()
 			state.num = state.randpmS;
 
 			if (state.timeNum > 20) state.timeNum--;
+
+			Mix_PlayChannel(-1, state.fx_shoot, 0);
 		}
 
 		if (state.num > 0)
